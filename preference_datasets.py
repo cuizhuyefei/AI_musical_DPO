@@ -9,7 +9,7 @@ import random
 from bs4 import BeautifulSoup, NavigableString
 import numpy as np
 from typing import Dict, List, Optional, Iterator, Callable, Union, Tuple
-
+import json
 
 def extract_anthropic_prompt(prompt_and_response):
     """Extract the anthropic prompt from a prompt and response pair."""
@@ -159,6 +159,175 @@ def get_hh(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str,
 
     return data
 
+def get_lyricslength(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading lyricslength dataset ({split} split) from offline...')
+    with open('./data/lyricslength_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        s = row['prompt']
+        if s[-2] == ' ':
+            num = int(s[-1])
+            en_sentence = s[:-3]
+        else: 
+            num = int(s[-2:])
+            en_sentence = s[:-4]
+        if en_sentence[-1] == '\t':
+            en_sentence = en_sentence[-1]
+        #len_lst = [1 for i in range(num)]
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {num} characters. Please only output the translated results and nothing more.  \
+The English lyrics is: {en_sentence}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = row['responses']
+        data[prompt]['sft_target'] = row['sft_target']
+    print("get lyricslength ok!")
+    return data
+
+def get_parallel_translation(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_translation dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''The Chinese translation of the English lyric "{en}" is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_translation ok!")
+    return data
+
+def get_parallel_length(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_length dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_length ok!")
+    return data
+
+def get_parallel_word_boundary(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_word_boundary dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. The word boundary should be {word_boundary}, where 1 means "there should be a word boundary after this syllable" and 0 means "we do not care if there is a boundary". Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_word_boundary ok!")
+    return data
+
+def get_parallel_translation_zh(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_translation dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''英文歌词“{en}”的中文翻译是:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_translation ok!")
+    return data
+
+def get_parallel_length_zh(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_length dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''我会给你一句英文歌词，你需要将其翻译成中文，精确到{length}个字。请仅输出翻译结果。英文歌词是：{en}，则翻译结果是：'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_length ok!")
+    return data
+
+def get_parallel_word_boundary_zh(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading parallel_word_boundary dataset ({split} split) from offline...')
+    with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        word_boundary = row['word_boundary']
+        length = row['len']
+        prompt = f'''  - 我会给你一句英文歌词，你需要将其翻译成中文，精确到{length}个字。中文词汇的边界应该是{word_boundary}，其中1表示“这个音节后面应该有一个词汇边界”，0表示“我们不关心是否有边界”。请仅输出翻译结果。英文歌词是：{en}，则翻译结果是：'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get parallel_word_boundary ok!")
+    return data
+
+# get_lyricslength('train')
 
 def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = None):
     """Load the given dataset by name. Supported by default are 'shp', 'hh', and 'se'."""
@@ -168,6 +337,20 @@ def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = No
         data = get_hh(split, silent=silent, cache_dir=cache_dir)
     elif name == 'se':
         data = get_se(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'lyricslength':
+        data = get_lyricslength(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'paralleltranslation':
+        data = get_parallel_translation(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'parallellength':
+        data = get_parallel_length(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'parallelwordboundary':
+        data = get_parallel_word_boundary(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'paralleltranslation_zh':
+        data = get_parallel_translation_zh(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'parallellength_zh':
+        data = get_parallel_length_zh(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'parallelwordboundary_zh':
+        data = get_parallel_word_boundary_zh(split, silent=silent, cache_dir=cache_dir)
     else:
         raise ValueError(f"Unknown dataset '{name}'")
 
@@ -311,7 +494,7 @@ def get_batch_iterator(names: List[str],
     if silent:
         datasets.logging.disable_progress_bar()
         datasets.logging.set_verbosity_error()
-
+    print("into get_batch_iterator, split = ", split)
     with TemporarilySeededRandom(seed):
         permutation_seeds = iter(np.random.randint(0, 2**32, size=1000000))
         flat_data = []
@@ -319,6 +502,7 @@ def get_batch_iterator(names: List[str],
             truncation_mode = 'keep_end' if name == 'hh' else 'keep_start'
             for prompt, data in get_dataset(name, split, silent=silent, cache_dir=cache_dir).items():
                 flat_data.append((prompt, data['responses'], data['pairs'], data['sft_target'], truncation_mode))
+            print("already get flat_data, size = ", len(flat_data))
 
     collate_fn = get_collate_fn(tokenizer)
 
@@ -331,6 +515,7 @@ def get_batch_iterator(names: List[str],
                 print(f'Finished generating {n_epochs} epochs on {split} split')
             break
         if shuffle:
+            print('debug', next(permutation_seeds), len(flat_data))
             with TemporarilySeededRandom(next(permutation_seeds)):
                 random.shuffle(flat_data)
 
