@@ -31,7 +31,7 @@ def worker_main(rank: int, world_size: int, config: DictConfig, policy: nn.Modul
         os.environ['WANDB_CACHE_DIR'] = get_local_dir(config.local_dirs)
         wandb.init(
             entity=config.wandb.entity,
-            project=config.wandb.project,
+            project="lyricslength-dpo",
             config=OmegaConf.to_container(config),
             dir=get_local_dir(config.local_dirs),
             name=config.exp_name,
