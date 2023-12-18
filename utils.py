@@ -8,9 +8,42 @@ import torch.distributed as dist
 import inspect
 import importlib.util
 import socket
-import os
+import os, subprocess
 from typing import Dict, Union, Type, List
+from torch.distributed.fsdp import (
+    FullyShardedDataParallel as FSDP,
+    FullStateDictConfig,
+    StateDictType,
+)
 
+def gpu_memory_usage():
+    torch.cuda.empty_cache()
+    result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,nounits,noheader'], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8')
+    memory_usage = [int(x) for x in output.strip().split('\n')]
+    return memory_usage
+
+def save_checkpoint(rank, path, iter_num, model, optimizer):
+    latest_path = os.path.join(path, 'latest.pt')
+    if rank == 0:
+        if os.path.exists(latest_path):
+            os.rename(latest_path, latest_path + '.bak')
+    torch.distributed.barrier()
+
+    save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+    with FSDP.state_dict_type(
+        model, StateDictType.FULL_STATE_DICT, save_policy
+    ):
+        cpu_state = model.state_dict()
+    # optimizer_state = FSDP.full_optim_state_dict(model, optimizer)
+
+    if rank == 0:
+        torch.save(
+            {
+                'iter_num': iter_num,
+                'model_state_dict': cpu_state,
+                # 'optimizer_state_dict': optimizer_state,
+            }, latest_path)
 
 def get_open_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

@@ -9,7 +9,7 @@ import random
 from bs4 import BeautifulSoup, NavigableString
 import numpy as np
 from typing import Dict, List, Optional, Iterator, Callable, Union, Tuple
-import json
+import json, os
 
 def extract_anthropic_prompt(prompt_and_response):
     """Extract the anthropic prompt from a prompt and response pair."""
@@ -235,6 +235,78 @@ def get_parallel_length(split: str, silent: bool = False, cache_dir: str = None)
     print("get parallel_length ok!")
     return data
 
+def get_quality_length(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading quality_length dataset ({split} split) from offline...')
+    with open('./data/quality_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        if len(zh) == 0 or len(row['pairs']) == 0:
+            continue
+        length = len(zh[0])
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = row['pairs']
+        data[prompt]['responses'] = zh
+        data[prompt]['sft_target'] = zh[-1]
+    print("get parallel_length ok!")
+    return data
+
+def get_llama_quality_length(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading llamaquality_length dataset ({split} split) from offline...')
+    with open('./data/llamaquality_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        if len(zh) == 0 or len(row['pairs']) == 0:
+            continue
+        length = len(zh[0])
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = row['pairs']
+        data[prompt]['responses'] = zh
+        data[prompt]['sft_target'] = zh[-1]
+    print("get llamaquality_length ok!")
+    return data
+
+def get_pure_length(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading purelength dataset ({split} split) from offline...')
+    with open('./data/purelength_{}.json'.format(split), encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('done')
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        if len(zh) == 0 or len(row['pairs']) == 0:
+            continue
+        length = len(zh[0])
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = row['pairs']
+        data[prompt]['responses'] = zh
+        data[prompt]['sft_target'] = zh[-1]
+    print("get purelength ok!")
+    return data
+
 def get_parallel_word_boundary(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
     print(f'Loading parallel_word_boundary dataset ({split} split) from offline...')
     with open('./data/parallel_{}.json'.format(split), encoding="utf-8") as file_obj:
@@ -327,7 +399,121 @@ def get_parallel_word_boundary_zh(split: str, silent: bool = False, cache_dir: s
     print("get parallel_word_boundary ok!")
     return data
 
-# get_lyricslength('train')
+def get_reward1(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    data = defaultdict(lambda: defaultdict(list))
+    print(f'Loading reward1 dataset from offline...')
+    for i in range(5):
+        if not os.path.exists(f'data/data_scores_{i}.json'):
+            continue
+        with open(f'data/data_scores_{i}.json', encoding="utf-8") as file_obj: #read
+            score = json.load(file_obj)
+        with open(f'data/scoring_data_{i}.json', encoding="utf-8") as file_obj: #read
+            dataset = json.load(file_obj)
+
+        fir = True
+        for idx, row in enumerate(dataset):
+            if score[idx][0]<1 or score[idx][0]>4: continue
+            en = row['en_line']
+            zh = row['zh_line']
+            context = row['par']
+            prompt = f'''You are a Chinese sentence grader. Given Chinese sentence, you need to give scores in range 1-4 (4 is the highest) based on sentence fluency. 
+
+Here are the metrics:
+Score 1: Not fluent at all, can't understand the meaning easily.
+Score 2: There are inappropriate or awkward phrases or other big unbearable flaws.
+Score 3: Quite fluent. There exists small mistakes, but they are acceptable.
+Score 4: Very fluent and no mistakes. Likely come from a native Chinese speaker.
+
+Now, I will provide you with the Chinese sentence. You need to give me only one number and nothing else. 
+The Chinese sentence is: {zh}. The score is:'''
+            if fir:
+                print("prompt = ", prompt)
+                fir = False
+            data[prompt]['pairs'] = [(0, 1)]
+            data[prompt]['responses'] = ['aaa', 'bbb']
+            data[prompt]['sft_target'] = str(score[idx][0])
+    print("get reward1 ok!")
+    return data
+
+def get_reward2(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    data = defaultdict(lambda: defaultdict(list))
+    print(f'Loading reward2 dataset from offline...')
+    for i in range(5):
+        if not os.path.exists(f'data/data_scores_{i}.json'):
+            continue
+        with open(f'data/data_scores_{i}.json', encoding="utf-8") as file_obj: #read
+            score = json.load(file_obj)
+        with open(f'data/scoring_data_{i}.json', encoding="utf-8") as file_obj: #read
+            dataset = json.load(file_obj)
+
+        fir = True
+        for idx, row in enumerate(dataset):
+            if score[idx][1]<1 or score[idx][1]>4: continue
+            par = row['par']
+            en = row['en_line']
+            zh = row['zh_line']
+            context = row['par']
+            prompt = f'''You are a translation grader. Given English lyrics and a corresponding Chinese translation, you need to give scores in range 1-4 (4 is the highest) for translation accuracy. 
+
+Here are the metrics for translation accuracy:
+Score 1: More than 50% is translated wrongly, or there are unbearable translation mistakes.
+Score 2: Merely acceptable, but there are mistakes that need correction.
+Score 3: No big mistake in translation, totally acceptable. But there is still space for improvement, such as phrasing or the translation of idioms.
+Score 4: Excellent translation.
+
+Note that in either metrics, score 4 means excellent and should be only given if you are absolutely sure the translated sentence is perfect. Any tiny mistake will make its score less than 4.
+
+Now, I will provide you with the English lyrics and the Chinese translation. You need to give me only one number and nothing else. 
+To help you evaluate, the whole context: {par}.
+The English lyrics is: {en}.
+The Chinese translation is: {zh}. The score is:'''
+            if fir:
+                print("prompt = ", prompt)
+                fir = False
+            data[prompt]['pairs'] = [(0, 1)]
+            data[prompt]['responses'] = ['aaa', 'bbb']
+            data[prompt]['sft_target'] = str(score[idx][1])
+    print("get reward2 ok!")
+    print(len(data))
+    return data
+
+def get_reward3(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    data = defaultdict(lambda: defaultdict(list))
+    print(f'Loading reward3 dataset from offline...')
+    for i in range(5):
+        if not os.path.exists(f'data/data_scores_{i}.json'):
+            continue
+        with open(f'data/data_scores_{i}.json', encoding="utf-8") as file_obj: #read
+            score = json.load(file_obj)
+        with open(f'data/scoring_data_{i}.json', encoding="utf-8") as file_obj: #read
+            dataset = json.load(file_obj)
+
+        fir = True
+        for idx, row in enumerate(dataset):
+            if score[idx][2]<1 or score[idx][2]>4: continue
+            en = row['en_line']
+            zh = row['zh_line']
+            context = row['par']
+            prompt = f'''You are a translation grader. Given a Chinese translation of lyrics, you need to give scores in range 1-4 (4 is the highest) for whether it looks like good lyrics. 
+
+Criteria for scoring:
+Score 1: The translation does not resonate as good lyrics.
+Score 2: Acceptable as lyrics, but mundane and unremarkable.
+Score 3: Good fit for lyrics with some literary flair and aesthetic language.
+Score 4: Outstanding lyrical quality, inventive, expressive, and captivating.
+
+Reserve a score of 4 for truly impressive lyricism and be prudent when giving 4. Regular conversational phrases typically merit a score of 2.
+
+Now, I will provide you with the Chinese translation. You need to give me only one number and nothing else. 
+The Chinese translation is: {zh}. The score is:'''
+            if fir:
+                print("prompt = ", prompt)
+                fir = False
+            data[prompt]['pairs'] = [(0, 1)]
+            data[prompt]['responses'] = ['aaa', 'bbb']
+            data[prompt]['sft_target'] = str(score[idx][2])
+    print("get reward3 ok!")
+    return data
 
 def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = None):
     """Load the given dataset by name. Supported by default are 'shp', 'hh', and 'se'."""
@@ -351,6 +537,18 @@ def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = No
         data = get_parallel_length_zh(split, silent=silent, cache_dir=cache_dir)
     elif name == 'parallelwordboundary_zh':
         data = get_parallel_word_boundary_zh(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'qualitylength':    
+        data = get_quality_length(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'llamaqualitylength':    
+        data = get_llama_quality_length(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'purelength':
+        data = get_pure_length(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'reward1':
+        data = get_reward1(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'reward2':
+        data = get_reward2(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'reward3':
+        data = get_reward3(split, silent=silent, cache_dir=cache_dir)
     else:
         raise ValueError(f"Unknown dataset '{name}'")
 

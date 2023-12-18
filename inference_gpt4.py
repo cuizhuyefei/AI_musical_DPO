@@ -12,7 +12,7 @@ from utils import (
     get_local_dir,
 )
 from typing import Optional, Dict, List, Union, Tuple
-import re, json, random
+import re, json, random, time, traceback
 
 def disable_dropout(model: torch.nn.Module):
     """Disable dropout in a model."""
@@ -228,18 +228,35 @@ def get_gpt4_gen(prompt, use_kimi=True):
             base_url="https://api.moonshot.cn/v1")
     else:
         client = OpenAI(
-            api_key="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",
+            api_key="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",
         )
-    response = client.chat.completions.create(
-        model="moonshot-v1-8k" if use_kimi else "gpt-4",
-        messages=[
-        {"role": "user", "content": f'''{prompt}'''}
-        ]
-    )
-    return response.choices[0].message.content
+    while True:
+        try:
+            response = client.chat.completions.create(
+                model="moonshot-v1-8k" if use_kimi else "gpt-4",
+                messages=[
+                {"role": "user", "content": f'''{prompt}'''}
+                ]
+            )
+            return response.choices[0].message.content
+        except:
+            print(traceback.format_exc())
+            time.sleep(10)
+
 
 def cal_length_test_acc():
-    use_kimi = True
+    """
+    Calculate the length-based test accuracy.
+
+    This function calculates the accuracy and mean error of a length-based test. It generates samples using the GPT-4 model
+    and compares the generated samples with the desired length specified in the prompt. The accuracy is calculated as the
+    percentage of samples with the correct length, and the mean error is calculated as the average absolute difference
+    between the generated length and the desired length.
+
+    Returns:
+        None
+    """
+    use_kimi = False
     raw_data = get_dataset(name='parallellength', split='test')
     
     tot = 0
@@ -265,8 +282,7 @@ def cal_length_test_acc():
             print("trans = ", trans, real_length)
         desired_length = [float(n) for n in re.findall(r'[-+]?[0-9]*\.?[0-9]+', prompt)]
         tot += 1
-        if len(gpt4_gen)%50==0:
-            print(len(gpt4_gen))
+        print(len(gpt4_gen))
         cor += int(real_length == desired_length[0])
         err += abs(real_length - desired_length[0])
         save_file = 'kimi_test_gen.json' if use_kimi else 'gpt4_test_gen.json'
