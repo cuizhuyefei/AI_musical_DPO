@@ -20,16 +20,22 @@ def disable_dropout(model: torch.nn.Module):
         if isinstance(module, torch.nn.Dropout):
             module.p = 0
 
+call_inference_cnt_for_empty = 0
+# test时生成的参数！！
 def get_batch_samples(model, tokenizer, batch: Dict[str, torch.LongTensor], n=1) -> Tuple[str, str]:
     """Generate samples from the policy (and reference model, if doing DPO training) for the given batch of inputs."""
 
     # FSDP generation according to https://github.com/pytorch/pytorch/issues/100069
     # ctx = lambda: (FSDP.summon_full_params(model, writeback=False, recurse=False))
     # with ctx():
+    global call_inference_cnt_for_empty
+    call_inference_cnt_for_empty += 1
+    if call_inference_cnt_for_empty % 10 == 0:
+        torch.cuda.empty_cache()
     reference_output = model.generate(
         batch['prompt_input_ids'], attention_mask=batch['prompt_attention_mask'], 
         max_length=200, do_sample=True, pad_token_id=tokenizer.pad_token_id,
-        num_return_sequences=n, temperature=1.0)
+        num_return_sequences=n, num_beams=5) #temperature=0.7, top_p=0.95)
     # print(reference_output, reference_output.shape)
     reference_output = pad_to_length(reference_output, 200, tokenizer.pad_token_id)
     # print(reference_output, reference_output.shape)
@@ -144,7 +150,7 @@ def get_batch_iterator(tokenizer,
         for datapoint in data:
             flat_data.append((datapoint['prompt'], datapoint['responses'], 
                             datapoint['pairs'], datapoint['sft_target'], truncation_mode))    
-    print("already get flat_data, size = ", len(flat_data))
+    # print("already get flat_data, size = ", len(flat_data))
     
     collate_fn = get_collate_fn(tokenizer)
 
@@ -249,8 +255,13 @@ def run_musical_length_generation(tokenizer, policy_model, negative=False, only_
                 json.dump(res, file_obj, ensure_ascii=False)
     return res
 
-def gen_test(tokenizer, policy_model, num_data):
-    raw_data = get_dataset(name='parallellength', split='test')
+def gen_test(tokenizer, policy_model, num_data, use_rhyme=False):
+    # raw_data = get_dataset(name='parallellength', split='test')
+    # raw_data = get_dataset(name='parallellength', split='test')
+    if use_rhyme:
+        raw_data = get_dataset(name='musical_test_rhyme', split='test')
+    else:
+        raw_data = get_dataset(name='musical_test', split='test')
     
     tot = 0
     cor = 0
@@ -263,7 +274,7 @@ def gen_test(tokenizer, policy_model, num_data):
         data_point['prompt'] = prompt
         data.append(data_point)
         idx += 1
-        if idx % 16 == 0: 
+        if idx % 8 == 0: 
             batch = get_batch_iterator(tokenizer, data, False)
             print("batch is already generated!", idx)
             reference_samples = get_batch_samples(policy_model, tokenizer, batch)
@@ -272,7 +283,7 @@ def gen_test(tokenizer, policy_model, num_data):
                 trans = sample[len(prompt):].strip()
                 ret.append(trans)
             data = []
-        if idx % num_data == 0:
+        if idx == num_data:
             break
     
     if len(data) > 0:
@@ -348,6 +359,52 @@ def cal_length_test_acc(tokenizer, policy_model):
     print("acc = ", cor / tot, cor, tot)
     print("mean err =", err / tot, err, tot)
     print("------------------------------------------------------------------------")
+
+def apply_translation(tokenizer, policy_model):
+    print("translation:---------------------------------------")
+    state_dict = torch.load('.cache/zhuorui/parallel_translation_sft_2023-12-03_22-43-13_740607/LATEST/policy.pt', map_location='cpu')
+    policy_model.load_state_dict(state_dict['state'])
+    
+    # training data
+    with open('data/reward_ft.json', encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    cur_data = []
+    for idx, raw_point in enumerate(dataset):
+        en = raw_point['en']
+        data_point = {
+            'prompt': f'''The Chinese translation of the English lyric {en} is:''',
+            'responses': ['', ''],
+            'pairs': [(0, 1)],
+            'sft_target': '',
+        }
+        cur_data.append(data_point)
+        if idx % 30 == 0:
+            batch = get_batch_iterator(tokenizer, cur_data, False)
+            print("batch is already generated!", idx, len(cur_data))
+            reference_samples = get_batch_samples(policy_model, tokenizer, batch)
+            for jdx, (prompt, sample) in enumerate(zip(batch['prompt'], reference_samples)):
+                trans = sample[len(prompt):].strip()
+                dataset[idx - len(cur_data) + jdx + 1]['raw_trans'] = trans
+            cur_data = []
+    if len(cur_data) > 0:
+        batch = get_batch_iterator(tokenizer, cur_data, False)
+        print("batch is already generated!", idx, len(cur_data))
+        reference_samples = get_batch_samples(policy_model, tokenizer, batch)
+        for jdx, (prompt, sample) in enumerate(zip(batch['prompt'], reference_samples)):
+            trans = sample[len(prompt):].strip()
+            dataset[idx - len(cur_data) + jdx + 1]['raw_trans'] = trans
+    with open('data/reward_ft_withtrans.json', 'w', encoding='utf-8') as file_obj:
+        json.dump(dataset, file_obj, ensure_ascii=False)
+
+def test_for_ckpt(tokenizer, policy_model, ckpt_path = None, save_path = None, use_rhyme=False):
+    if ckpt_path:
+        state_dict = torch.load(ckpt_path, map_location='cpu')
+        policy_model.load_state_dict(state_dict['state'])
+    device = 'cuda'
+    policy_model = policy_model.to(device)
+    gen_res = gen_test(tokenizer, policy_model, 2000, use_rhyme)
+    with open(save_path, 'w', encoding='utf-8') as file_obj:
+        json.dump(gen_res, file_obj, ensure_ascii=False)
 
 if __name__ == '__main__':
     #loading tokenizer
@@ -457,7 +514,10 @@ if __name__ == '__main__':
         torch_dtype=policy_model_dtype)
     disable_dropout(policy_model)
     device = 'cuda'
-    policy_model = policy_model.to(device)
+    policy_model.to(device)
+
+    # apply_translation(tokenizer, policy_model)
+    # exit(0)
 
     # state_dict = torch.load('.cache/zhuorui/parallel_translation_sft_2023-12-03_22-43-13_740607/LATEST/policy.pt', map_location='cpu') # length sft
     # policy_model.load_state_dict(state_dict['state'])
@@ -513,7 +573,7 @@ if __name__ == '__main__':
     # eval_model(tokenizer, policy_model, length_data)
     # cal_length_test_acc(tokenizer, policy_model)
     # state_dict = torch.load('.cache/zhuorui/parallel_length_sft_2023-12-04_05-49-24_265219/LATEST/policy.pt', map_location='cpu') # length sft
-    # state_dict = torch.load('.cache/zhuorui/parallel_combine_sft_2023-12-12_08-58-10_628055/LATEST/policy.pt', map_location='cpu') # combine sft
+    # state_dict = torch.load('.cache/zhuorui/parallel_combine_sft_2023-12-12_08-58-10_628055/LATEST/policy.pt', map_location='cpu') # combine sft sft
     # state_dict = torch.load('.cache/zhuorui/parallel_quality_sft_2023-12-13_22-47-24_706096/LATEST/policy.pt', map_location='cpu') # quality sft
     # policy_model.load_state_dict(state_dict['state'])
     # policy_model = policy_model.to(device)
@@ -537,21 +597,65 @@ if __name__ == '__main__':
     # state_dict = torch.load('.cache/zhuorui/purelength_dpov6dot3_2023-12-15_05-52-04_767452/LATEST/policy.pt', map_location='cpu') # dpo v6.3
     # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot1_2023-12-15_07-35-10_861274/LATEST/policy.pt', map_location='cpu') # dpo v7.1
     # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot2_2023-12-15_08-11-39_047438/LATEST/policy.pt', map_location='cpu') # dpo v7.2
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot3_2023-12-15_08-24-23_008981/LATEST/policy.pt', map_location='cpu') # dpo v7.3
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot4_2023-12-15_08-36-01_015505/LATEST/policy.pt', map_location='cpu') # dpo v7.4
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot5_2023-12-15_08-58-32_220776/LATEST/policy.pt', map_location='cpu') # dpo v7.5
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot6_2023-12-15_23-56-57_141691/LATEST/policy.pt', map_location='cpu') # dpo v7.6
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot7_2023-12-16_01-51-36_561208/LATEST/policy.pt', map_location='cpu') # dpo v7.7
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot7_2023-12-16_02-25-33_479708/LATEST/policy.pt', map_location='cpu') # dpo v7.8
-    state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot9_2023-12-16_03-59-38_051077/LATEST/policy.pt', map_location='cpu') # dpo v7.9
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot3_2023-12-15_08-24-23_008981/LATEST/policy.pt', map_location='cpu') # dpo v7.3
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot4_2023-12-15_08-36-01_015505/LATEST/policy.pt', map_location='cpu') # dpo v7.4
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot5_2023-12-15_08-58-32_220776/LATEST/policy.pt', map_location='cpu') # dpo v7.5
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot6_2023-12-15_23-56-57_141691/LATEST/policy.pt', map_location='cpu') # dpo v7.6
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot7_2023-12-16_01-51-36_561208/LATEST/policy.pt', map_location='cpu') # dpo v7.7
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot7_2023-12-16_02-25-33_479708/LATEST/policy.pt', map_location='cpu') # dpo v7.8
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot9_2023-12-16_03-59-38_051077/LATEST/policy.pt', map_location='cpu') # dpo v7.9
+    # state_dict = torch.load('.cache/zhuorui/llamalength_dpov7dot9_new_2024-01-09_02-24-42_237552/LATEST/policy.pt', map_location='cpu')
     
-    policy_model.load_state_dict(state_dict['state'])
-    policy_model = policy_model.to(device)
-    cal_length_test_acc(tokenizer, policy_model)
-    eval_model(tokenizer, policy_model, length_data)
-    gen_res = gen_test(tokenizer, policy_model, 100)
-    with open('DPOv7dot9_gen_res.json', 'w', encoding='utf-8') as file_obj:
-        json.dump(gen_res, file_obj, ensure_ascii=False)
+    # policy_model.load_state_dict(state_dict['state'])
+    # policy_model = policy_model.to(device)
+    # # cal_length_test_acc(tokenizer, policy_model)
+    # # eval_model(tokenizer, policy_model, length_data)
+    # gen_res = gen_test(tokenizer, policy_model, 500)
+    # with open('DPOnew1_gen_res_par.json', 'w', encoding='utf-8') as file_obj:
+    #     json.dump(gen_res, file_obj, ensure_ascii=False)
+
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new_2024-01-10_03-14-46_464284/LATEST/policy.pt', 'DPOnew1_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new_2024-01-10_02-42-45_461523/LATEST/policy.pt', 'DPOnew2_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new3_2024-01-10_05-26-11_272057/LATEST/policy.pt', 'DPOnew3_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new3_2024-01-10_07-08-19_428487/LATEST/policy.pt', 'DPOnew4_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new5_2024-01-10_08-23-10_258099/LATEST/policy.pt', 'DPOnew5_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new7_2024-01-10_20-28-45_504044/LATEST/policy.pt', 'DPOnew7_gen.json')
+
+    test_for_ckpt(tokenizer, policy_model, None, 'C_0w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-13_21-49-53_912411/LATEST/policy.pt', 'C_20w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-13_06-46-10_238302/LATEST/policy.pt', 'C_280w.json', use_rhyme=True)
+    
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-12_08-17-53_858021/LATEST/policy.pt', 'C_50w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-12_08-17-53_858021/LATEST/policy.pt', 'C_50w_worhyme.json', use_rhyme=False)
+
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-01_08-17-12_561013/LATEST/policy.pt', 'C_100w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-01_08-17-12_561013/LATEST/policy.pt', 'C_100w_worhyme.json', use_rhyme=False)
+    
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-05_08-09-37_988364/LATEST/policy.pt', 'C_100w_filtered.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-05_08-09-37_988364/LATEST/policy.pt', 'C_100w_filtered_worhyme.json', use_rhyme=False)
+
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_20-55-25_729763/LATEST/policy.pt', 'C_100w_filtered2.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_20-55-25_729763/LATEST/policy.pt', 'C_100w_filtered2_worhyme.json', use_rhyme=False)
+
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-08_21-12-50_823524/LATEST/policy.pt', 'C_175w_filtered_accfintune_2.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'C_175w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'C_175w_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'C_175w_filtered.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'C_175w_filtered_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'C_175w_filtered_accfintune.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'C_175w_filtered_accfintune_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_08-08-47_345752/LATEST/policy.pt', 'C_70w_filteredacc.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_08-08-47_345752/LATEST/policy.pt', 'C_70w_filteredacc_worhyme.json', use_rhyme=False)
+
+    
+
+
+
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/AC_sft_2024-02-02_07-57-08_179741/LATEST/policy.pt', 'AC_100w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-01_08-17-12_561013/LATEST/policy.pt', 'C_100w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, save_path='original_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/parallel_length_sft_2023-12-04_05-49-24_265219/LATEST/policy.pt', 'SFT1_gen.json')
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/parallel_combine_sft_2023-12-12_08-58-10_628055/LATEST/policy.pt', 'SFT2_gen.json')
 
     # res = run_musical_length_generation(tokenizer, policy_model, negative=True, filename='negative_data_for_DPO.json')
     # with open('negative_data_for_DPO.json', 'w', encoding='utf-8') as file_obj:

@@ -165,15 +165,15 @@ class BasicTrainer(object):
         self.policy = policy
         self.reference_model = reference_model
 
-        print("about to get batch iterator, in BaseTrainer")
+        rank0_print("about to get batch iterator, in BaseTrainer")
         # import ipdb
         # ipdb.set_trace()  # 设置断点
-        self.train_iterator = get_batch_iterator(**data_iterator_kwargs, split='train', n_epochs=config.n_epochs, n_examples=config.n_examples, batch_size=config.batch_size, silent=rank != 0, cache_dir=get_local_dir(config.local_dirs))
+        rank0_print("loading train data iterator")
+        self.train_iterator = get_batch_iterator(**data_iterator_kwargs, split='train', n_epochs=config.n_epochs, n_examples=config.n_examples, batch_size=config.batch_size, silent=rank != 0, cache_dir=get_local_dir(config.local_dirs), dataset_clipping=config.dataset_clipping, use_filtered_datasets=config.use_filtered_datasets, random_drop_rhyme=config.random_drop_rhyme)
 
-        #rank0_print(f'Loaded train data iterator')
-        print("loaded train data iterator")
+        rank0_print("loading eval data iterator")
+        data_iterator_kwargs['shuffle'] = False
         self.eval_iterator = get_batch_iterator(**data_iterator_kwargs, split='test', n_examples=config.n_eval_examples, batch_size=config.eval_batch_size, silent=rank != 0, cache_dir=get_local_dir(config.local_dirs))
-        print("self.eval_iterator = ", self.eval_iterator)
         self.eval_batches = list(self.eval_iterator)
         #rank0_print(f'Loaded {len(self.eval_batches)} eval batches of size {config.eval_batch_size}')
 
@@ -263,6 +263,7 @@ class BasicTrainer(object):
         """Begin either SFT or DPO training, with periodic evaluation."""
 
         rank0_print(f'Using {self.config.optimizer} optimizer')
+        # rank0_print(f'Using lr {self.config.lr}')
         self.optimizer = getattr(torch.optim, self.config.optimizer)(self.policy.parameters(), lr=self.config.lr)
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lambda step: min(1.0, (step + 1) / (self.config.warmup_steps + 1)))
     
@@ -282,6 +283,31 @@ class BasicTrainer(object):
             if self.example_counter % self.config.eval_every == 0 and (self.example_counter > 0 or self.config.do_first_eval):
                 rank0_print(f'Running evaluation after {self.example_counter} train examples')
                 self.policy.eval()
+
+                # if self.config.sample_during_eval:
+                #     for eval_batch in (tqdm.tqdm(self.eval_batches, desc='Computing eval metrics') if self.rank == 0 else self.eval_batches):
+                #         local_eval_batch = slice_and_move_batch_for_device(eval_batch, self.rank, self.world_size, self.rank)
+                #         with torch.no_grad():
+                #             policy_samples, reference_samples = self.get_batch_samples(local_eval_batch)
+                #             print("rank = ", self.rank, "pred = ", policy_samples, batch['chosen_input_ids'].shape)
+                
+                # for eval_batch in (tqdm.tqdm(self.eval_batches, desc='Computing eval metrics') if self.rank == 0 else self.eval_batches):
+                #     local_eval_batch = slice_and_move_batch_for_device(eval_batch, self.rank, self.world_size, self.rank)
+                #     with torch.no_grad():
+                #         # _, eval_metrics = self.get_batch_metrics(local_eval_batch, self.config.loss, train=False)
+                #         policy_samples, reference_samples = self.get_batch_samples(local_eval_batch)
+                #         print("rank = ", self.rank, "pred = ", policy_samples, batch['chosen_input_ids'].shape)
+                
+                # if self.config.sample_during_eval:
+                #     from llm_score import evalReward2
+                #     eval_reward = wandb.Table(columns=["idx", "en", "zh", "reward", "human"])
+                #     data, correlation = evalReward2(self.policy, self.tokenizer)
+                #     for idx, en, zh, reward, human in data:
+                #         eval_reward.add_data(idx, en, zh, reward, human)
+                #     wandb.log({"eval_reward": eval_reward}, step=self.example_counter)
+                #     wandb.log({"correlation": correlation}, step=self.example_counter)
+
+                ##############################################################################################                
 
                 all_eval_metrics = defaultdict(list)
                 if self.config.sample_during_eval:
@@ -333,13 +359,13 @@ class BasicTrainer(object):
                         if self.config.loss.name == 'dpo':
                             wandb.log({"reference_samples": reference_text_table}, step=self.example_counter)
 
-                if self.example_counter > 0:
-                    if self.config.debug:
-                        rank0_print('skipping save in debug mode')
-                    else:
-                        output_dir = os.path.join(self.run_dir, f'step-{self.example_counter}')
-                        rank0_print(f'creating checkpoint to write to {output_dir}...')
-                        self.save(output_dir, mean_eval_metrics)
+                # if self.example_counter > 0:
+                #     if self.config.debug:
+                #         rank0_print('skipping save in debug mode')
+                #     else:
+                #         output_dir = os.path.join(self.run_dir, f'step-{self.example_counter}')
+                #         rank0_print(f'creating checkpoint to write to {output_dir}...')
+                #         self.save(output_dir, mean_eval_metrics)
             #### END EVALUATION ####
 
             #### BEGIN TRAINING ####
@@ -495,19 +521,19 @@ class FSDPTrainer(BasicTrainer):
         del policy_state_dict
         dist.barrier()
 
-        save_policy = FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        with FSDP.state_dict_type(self.policy, StateDictType.FULL_STATE_DICT, optim_state_dict_config=save_policy):
-            optimizer_state_dict = FSDP.optim_state_dict(self.policy, self.optimizer)
+        # save_policy = FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True)
+        # with FSDP.state_dict_type(self.policy, StateDictType.FULL_STATE_DICT, optim_state_dict_config=save_policy):
+        #     optimizer_state_dict = FSDP.optim_state_dict(self.policy, self.optimizer)
 
-        if self.rank == 0:
-            self.write_state_dict(self.example_counter, optimizer_state_dict, metrics, 'optimizer.pt', output_dir)
-        del optimizer_state_dict
-        dist.barrier()
+        # if self.rank == 0:
+        #     self.write_state_dict(self.example_counter, optimizer_state_dict, metrics, 'optimizer.pt', output_dir)
+        # del optimizer_state_dict
+        # dist.barrier()
 
-        if self.rank == 0:
-            scheduler_state_dict = self.scheduler.state_dict()
-            self.write_state_dict(self.example_counter, scheduler_state_dict, metrics, 'scheduler.pt', output_dir)
-        dist.barrier()
+        # if self.rank == 0:
+        #     scheduler_state_dict = self.scheduler.state_dict()
+        #     self.write_state_dict(self.example_counter, scheduler_state_dict, metrics, 'scheduler.pt', output_dir)
+        # dist.barrier()
         
 
 class TensorParallelTrainer(BasicTrainer):

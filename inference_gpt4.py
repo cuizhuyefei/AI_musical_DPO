@@ -256,7 +256,7 @@ def cal_length_test_acc():
     Returns:
         None
     """
-    use_kimi = False
+    use_kimi = True
     raw_data = get_dataset(name='parallellength', split='test')
     
     tot = 0
@@ -288,6 +288,10 @@ def cal_length_test_acc():
         save_file = 'kimi_test_gen.json' if use_kimi else 'gpt4_test_gen.json'
         with open(save_file, 'w', encoding='utf-8') as file_obj:
             json.dump(gpt4_gen, file_obj, ensure_ascii=False)
+        if idx % 100 == 0:
+            print("acc = ", cor / tot, cor, tot)
+            print("mean err =", err / tot, err, tot)
+            print("------------------------------------------------------------------------")
     print("acc = ", cor / tot, cor, tot)
     print("mean err =", err / tot, err, tot)
     print("------------------------------------------------------------------------")

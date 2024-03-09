@@ -95,3 +95,12 @@ defaults:
 - _self_
 - model: blank_model_fp32 # basic model configuration
 - loss: sft # which loss function, either sft or dpo (specify loss.beta if using dpo)
+
+# retain only some data points
+dataset_clipping: 5000000
+
+# whether to use filtered datasets
+use_filtered_datasets: 0
+
+# ranomly drop rhyme constraint
+random_drop_rhyme: 0.0
