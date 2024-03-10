@@ -23,12 +23,14 @@ def get_batch_samples(model, tokenizer, batch: Dict[str, torch.LongTensor], n=1,
     # FSDP generation according to https://github.com/pytorch/pytorch/issues/100069
     # ctx = lambda: (FSDP.summon_full_params(model, writeback=False, recurse=False))
     # with ctx():
+    if n >= 80:
+        return get_batch_samples(model, tokenizer, batch, n//2, T, reward_model) + get_batch_samples(model, tokenizer, batch, n//2, T, reward_model)
     global call_inference_cnt_for_empty
     call_inference_cnt_for_empty += 1
-    if call_inference_cnt_for_empty % 5 == 0 or n>=20:
+    if call_inference_cnt_for_empty % 10 == 0 or not reward_model:
         torch.cuda.empty_cache()
     device = next(model.parameters()).device
-    max_length = 500 if n<20 else 125
+    max_length = 500 if reward_model else 120 # reward model / generation
     # beam_search: , num_beams=5
     if not reward_model:
         reference_output = model.generate(
@@ -64,7 +66,7 @@ def eval_llama(prompts, policy_model, tokenizer, N=1, use_FSDP=False, T=0.001, r
             'sft_target': '',
         })
         idx += 1
-        if idx % 4 == 0:
+        if idx % 16 == 0:
             batch = get_batch_iterator(tokenizer, data, False)
             reference_samples = get_batch_samples(policy_model, tokenizer, batch, n=N, T=T, reward_model=reward_model)
             for jdx, prompt in enumerate(batch['prompt']):

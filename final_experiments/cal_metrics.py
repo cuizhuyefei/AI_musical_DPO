@@ -236,6 +236,8 @@ def cal_bleu(data):
         # print(songs[idx].__name__, len(paragraphs), len(song_res))
         for jdx, par_res in enumerate(song_res):
             zh_lines = [line for line in paragraphs[jdx].split('\n') if line.strip()!='']
+            if len(par_res) != len(zh_lines):
+                print(songs[idx]["name"], jdx, len(par_res), len(zh_lines))
             assert(len(par_res) == len(zh_lines))
             for i, line_res in enumerate(par_res):
                 line_res['zh_trans'][0] = choose_best(line_res, i == len(par_res) - 1) # 判定line_res是否is_end
@@ -280,8 +282,36 @@ if __name__ == '__main__':
         llama = json.load(file_obj)
     print("for N80+80_ckpt3:")
     cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N40+40_ckpt3_noreward.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N40+40_ckpt3_noreward:")
+    cal_all_metrics(llama)
     with open('final_experiments/llama_songs_allres_N40+40_ckpt0.json', encoding="utf-8") as file_obj:
         llama = json.load(file_obj)
     print("for N40+40_ckpt0:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N20+20_ckpt3.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N20+20_ckpt3:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N10+10_ckpt3.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N10+10_ckpt3:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N1+0_ckpt3.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N1+0_ckpt3:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N40+40_ckpt3_T0.5.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N40+40_ckpt3_T0.5:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N40+40_ckpt3_T0.9.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N40+40_ckpt3_T0.9:")
+    cal_all_metrics(llama)
+    with open('final_experiments/llama_songs_allres_N40+40_ckpt3_notopp.json', encoding="utf-8") as file_obj:
+        llama = json.load(file_obj)
+    print("for N40+40_ckpt3_notopp:")
     cal_all_metrics(llama)
     

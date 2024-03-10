@@ -101,7 +101,7 @@ You should only output a translation and nothing else. Now, the input sentence i
                     -(2 if get_rhyme_id(sols[i][j])==rhyme else 0)
                     +(10**10 if i==cnt-1 and get_rhyme_id(sols[i][j])!=rhyme else 0)
                     -(reward12[i][j] if use_reward else 0)
-                    +(10**10 if reward12[i][j]<=2 else 0)
+                    +(10**10 if use_reward and reward12[i][j]<=2 else 0)
                     -(reward3[i][j] if use_reward else 0) for j in range(N)])
     if score < best_score:
       best_score = score
@@ -158,7 +158,7 @@ You should only output a translation and nothing else. Now, the input sentence i
               -(2 if get_rhyme_id(sols[i][j])==best_rhyme else 0)
               +(10**10 if i==cnt-1 and get_rhyme_id(sols[i][j])!=best_rhyme else 0)
               -(reward12[i][j] if use_reward else 0)
-              +(10**10 if reward12[i][j]<=2 else 0)
+              +(10**10 if use_reward and reward12[i][j]<=2 else 0)
               -(reward3[i][j] if use_reward else 0) for j in range(len(sols[i]))]
     if verbose: print("scores = ", scores)
     data_point = {}
@@ -213,12 +213,14 @@ use_kimi = False # 记得开成False！！
 ckpt = 3 # 默认开成3，除非用原模型！！
 use_reward = True
 use_N2 = True # 80+80
-N = 80 # !
-N2 = 80
+N = 40 # !
+N2 = 40
 if not use_N2: N2 = 0
 
 tmp = 'kimi' if use_kimi else 'llama'
-filename = f'final_experiments/{tmp}_songs_res_N{N}+{N2}_ckpt{ckpt}.json'
+noreward_suffix = '_noreward' if not use_reward else ''
+T_suffix = '_notopp'
+filename = f'final_experiments/{tmp}_songs_res_N{N}+{N2}_ckpt{ckpt}{noreward_suffix}{T_suffix}.json'
 print(f'N={N}', f'N2={N2}', f'use_kimi={use_kimi}', f'use_reward={use_reward}', f'use_N2={use_N2}', f'filename={filename}')
 if ckpt < 3: print(f'[WARN!!] ckpt {ckpt}')
 
