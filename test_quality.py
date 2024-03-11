@@ -34,8 +34,8 @@ comet_model = load_from_checkpoint(model_path)
 #     )
 
 '''新的test set'''
-# with open('data/musical_test.json', encoding="utf-8") as file_obj:
-#     dataset = json.load(file_obj)
+with open('data/musical_test.json', encoding="utf-8") as file_obj:
+    dataset = json.load(file_obj)
 '''之前的test set'''
 # with open('final_test.json', encoding="utf-8") as file_obj:
 #     dataset = json.load(file_obj)
@@ -43,8 +43,8 @@ comet_model = load_from_checkpoint(model_path)
 #     dataset2 = json.load(file_obj)
 #     dataset.extend(dataset2)
 '''Ou的test set'''
-with open('data/parallel_test.json', encoding="utf-8") as file_obj:
-    dataset = json.load(file_obj)
+# with open('data/parallel_test.json', encoding="utf-8") as file_obj:
+#     dataset = json.load(file_obj)
 
 
 data = defaultdict(lambda: defaultdict(list))
