@@ -34,15 +34,17 @@ comet_model = load_from_checkpoint(model_path)
 #     )
 
 '''新的test set'''
-with open('data/musical_test.json', encoding="utf-8") as file_obj:
-    dataset = json.load(file_obj)
+# with open('data/musical_test.json', encoding="utf-8") as file_obj:
+#     dataset = json.load(file_obj)
 '''之前的test set'''
 # with open('final_test.json', encoding="utf-8") as file_obj:
 #     dataset = json.load(file_obj)
 # with open('test_set_reward3.json', encoding="utf-8") as file_obj:
 #     dataset2 = json.load(file_obj)
 #     dataset.extend(dataset2)
-
+'''Ou的test set'''
+with open('data/parallel_test.json', encoding="utf-8") as file_obj:
+    dataset = json.load(file_obj)
 
 
 data = defaultdict(lambda: defaultdict(list))
@@ -249,30 +251,21 @@ def cal_allres(filename):
 # cal('C_100w_filtered2_worhyme.json')
 
 
-# cal('C_175w_filtered_accfintune_2.json')
-# cal('ou_sentence_testres.txt')
-cal('ou_sentence_bigres4.txt')
-# cal('C_175w.json')
-# cal('C_175w_worhyme.json')
-# cal('C_175w_filtered.json')
-# cal('C_175w_filtered_worhyme.json')
-# cal('C_175w_filtered_accfintune.json')
-# cal('C_175w_filtered_accfintune_worhyme.json')
+'''ou test set'''
+# cal('ou_parallel_test.txt')
+# cal('ou_testset_C_175w.json')
+# cal('ou_testset_C_175w_worhyme.json')
+# cal('ou_testset_C_175w_filtered.json')
+# cal('ou_testset_C_175w_filtered_worhyme.json')
+# cal('ou_testset_C_175w_filtered_accfintune.json')
+# cal('ou_testset_C_175w_filtered_accfintune_worhyme.json')
 
-# cal('C_100w.json')
-# cal('C_100w_filtered2.json')
-# cal('C_70w_filteredacc.json')
 
-# cal('original_gen.json')
-# cal('SFT1_gen.json')
-# cal('SFT2_gen.json')
-# cal('AB_100w_filtered_newtest.json')
-# cal('SFTv2_gen_res_par.json')
-# cal('original_gen_res.json')
-# cal('SFT_gen_res.json')
-# cal('SFTv2_gen_res.json')
-# cal('SFTv3_gen_res.json')
-# cal('DPOv1_gen_res.json')
-# cal('DPOv3dot5_gen_res.json')
-# cal('DPOv4dot1_gen_res.json')
-# cal('DPOv7dot9_gen_res.json')
+'''out test set'''
+cal('ou_sentence_testres.txt')
+cal('C_175w.json')
+cal('C_175w_worhyme.json')
+cal('C_175w_filtered.json')
+cal('C_175w_filtered_worhyme.json')
+cal('C_175w_filtered_accfintune.json')
+cal('C_175w_filtered_accfintune_worhyme.json')

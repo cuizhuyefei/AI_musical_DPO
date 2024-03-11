@@ -373,7 +373,10 @@ The English lyrics is: {en}. Then the translation result is:'''
 
 def get_test_musical(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
     print(f'Loading test_musical dataset ({split} split) from offline...')
-    with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+    # with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+    #     dataset = json.load(file_obj)
+    
+    with open('./data/parallel_test.json', encoding="utf-8") as file_obj:
         dataset = json.load(file_obj)
     # with open('final_test.json', encoding="utf-8") as file_obj:
     #     dataset = json.load(file_obj)
@@ -403,8 +406,12 @@ def get_test_musical(split: str, silent: bool = False, cache_dir: str = None) ->
 
 def get_test_musical_rhyme(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
     print(f'Loading test_musical_rhyme dataset ({split} split) from offline...')
-    with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+    # with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+    #     dataset = json.load(file_obj)
+    
+    with open('./data/parallel_test.json', encoding="utf-8") as file_obj:
         dataset = json.load(file_obj)
+    
     # with open('final_test.json', encoding="utf-8") as file_obj:
     #     dataset = json.load(file_obj)
     # with open('test_set_reward3.json', encoding="utf-8") as file_obj:

@@ -402,7 +402,7 @@ def test_for_ckpt(tokenizer, policy_model, ckpt_path = None, save_path = None, u
         policy_model.load_state_dict(state_dict['state'])
     device = 'cuda'
     policy_model = policy_model.to(device)
-    gen_res = gen_test(tokenizer, policy_model, 2000, use_rhyme)
+    gen_res = gen_test(tokenizer, policy_model, 20000, use_rhyme)
     with open(save_path, 'w', encoding='utf-8') as file_obj:
         json.dump(gen_res, file_obj, ensure_ascii=False)
 
@@ -621,7 +621,8 @@ if __name__ == '__main__':
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new5_2024-01-10_08-23-10_258099/LATEST/policy.pt', 'DPOnew5_gen.json')
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/llamalength_dpov7dot9_new7_2024-01-10_20-28-45_504044/LATEST/policy.pt', 'DPOnew7_gen.json')
 
-    test_for_ckpt(tokenizer, policy_model, None, 'C_0w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, None, 'C_0w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'C_ou_testset.json', use_rhyme=True)
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-13_21-49-53_912411/LATEST/policy.pt', 'C_20w.json', use_rhyme=True)
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-13_06-46-10_238302/LATEST/policy.pt', 'C_280w.json', use_rhyme=True)
     
@@ -637,15 +638,12 @@ if __name__ == '__main__':
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_20-55-25_729763/LATEST/policy.pt', 'C_100w_filtered2.json', use_rhyme=True)
     # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_20-55-25_729763/LATEST/policy.pt', 'C_100w_filtered2_worhyme.json', use_rhyme=False)
 
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-08_21-12-50_823524/LATEST/policy.pt', 'C_175w_filtered_accfintune_2.json', use_rhyme=True)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'C_175w.json', use_rhyme=True)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'C_175w_worhyme.json', use_rhyme=False)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'C_175w_filtered.json', use_rhyme=True)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'C_175w_filtered_worhyme.json', use_rhyme=False)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'C_175w_filtered_accfintune.json', use_rhyme=True)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'C_175w_filtered_accfintune_worhyme.json', use_rhyme=False)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_08-08-47_345752/LATEST/policy.pt', 'C_70w_filteredacc.json', use_rhyme=True)
-    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_08-08-47_345752/LATEST/policy.pt', 'C_70w_filteredacc_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'ou_testset_C_175w.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_sft_2024-02-08_07-51-21_911116/LATEST/policy.pt', 'ou_testset_C_175w_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'ou_testset_C_175w_filtered.json', use_rhyme=True)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-06_08-15-59_499366/LATEST/policy.pt', 'ou_testset_C_175w_filtered_worhyme.json', use_rhyme=False)
+    # test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'ou_testset_C_175w_filtered_accfintune.json', use_rhyme=True)
+    test_for_ckpt(tokenizer, policy_model, '.cache/zhuorui/C_filtered_sft_2024-02-07_19-29-40_317953/LATEST/policy.pt', 'ou_testset_C_175w_filtered_accfintune_worhyme.json', use_rhyme=False)
 
     
 
