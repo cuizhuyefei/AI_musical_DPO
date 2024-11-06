@@ -1,0 +1,442 @@
+data:
+  - idx: 0
+    en: That men will want to write on
+    par: |
+      You wait, little girl, on an empty stage, 
+      For fate to turn the light on
+      Your life, little girl, is an empty page, 
+      That men will want to write on
+    zh:
+      - 那男人会想写上
+      - 男儿会想写下来
+      - 男人想要写下来
+      - 男儿志向写成章
+      - 男人想在上面写
+
+  - idx: 1
+    en: Oh whithersoever they blow
+    par: |
+      I am I, Don Quixote, the Lord of La Mancha
+      My destiny calls and I go
+      And the wild winds of fortune, will carry me onward
+      Oh whithersoever they blow
+      Whithersoever they blow, onward to glory I go
+    zh: 
+    - 哦哦不管他们吹起
+    - 风儿啊你吹向何方
+    - 不管他们吹向哪里
+    - 无论何处随风吹拂
+    - 任凭风儿吹向何处
+
+  - idx: 2
+    en: And the wild winds of fortune, will carry me onward
+    par: |
+      I am I, Don Quixote, the Lord of La Mancha
+      My destiny calls and I go
+      And the wild winds of fortune, will carry me onward
+      Oh whithersoever they blow
+      Whithersoever they blow, onward to glory I go
+    zh: 
+    - 还有命运的狂风会带我走下去
+    - 而命运的狂风会把我带向远方
+    - 狂风带我飞奔向那不羁的天际
+    - 狂风高天给我力量乘风破浪去
+    - 命运的狂风，将我带向未知旅途
+
+  - idx: 3
+    en: But now we're Ex-wives.
+    par: |
+      Raising up the roof till we hit the ceiling
+      Get ready for the truth that we'll be revealing
+      Everybody knows that we used to be six wives
+      But now we're Ex-wives.
+    zh: 
+      - 却成为前妻
+      - 如今是前妻
+      - 如今是离婚
+      - 如今是前妻
+      - 现我们是前妻。
+
+  - idx: 4
+    en: And we'll have the Trunchbull bolting, we're REVOLTING!
+    par: |
+      We are revolting children, living in revolting times
+      We sing revolting songs, using revolting rhymes.
+      We'll be revolting children til our revoltings done,
+      And we'll have the Trunchbull bolting, we're REVOLTING!
+    zh:
+      - 还会有勒勒车我们转动起来
+      - 我们要翻云复雨推翻恶棍们
+      - 我们要反抗我们要反抗到底
+      - 我们会拒绝暴君的暴政统治
+      - 我们让她逃跑，我们是反叛者！
+
+  - idx: 5
+    en: Baby, it's time to think
+    par: |
+      You are sixteen going on seventeen 
+      Baby, it's time to think
+      Better beware, be canny and careful 
+      Baby, you're on the brink
+    zh:
+      - 宝贝应该考虑
+      - 宝贝该想一想
+      - 宝贝想清楚点
+      - 宝贝想清楚点
+      - 宝贝，该思考了
+
+  - idx: 6
+    en: To try, when your arms are too weary,
+    par: |
+      To right the unrightable wrong.
+      To love, pure and chaste, from afar,
+      To try, when your arms are too weary,
+      To reach the unreachable star!
+    zh:
+      - 尝试当你怀抱太轻松
+      - 在你疲倦时努力奋斗
+      - 当你的臂膀疲于奔走
+      - 即使你的臂弯已疲倦
+      - 尝试吧，当你双臂疲惫，
+
+  - idx: 7
+    en: My grandfather was a fire and brimstone preacher
+    par: |
+      My grandfather was a fire and brimstone preacher
+      But there are things that the Homilies and hymns won't teach ya
+      My mother was a genius
+      My father commanded respect
+      When they died they left no instructions
+      Just a legacy to protect
+    zh:
+      - 我爷爷是海枯和石烂的牧童
+      - 我的爷爷是位火与硫磺传道
+      - 我的祖父是火与硫磺的先知
+      - 我的爷爷是个充满激情牧师
+      - 我祖父是火与硫磺的传教士
+
+  - idx: 8
+    en: You wait, little girl, on an empty stage, 
+    par: |
+      You wait, little girl, on an empty stage, 
+      For fate to turn the light on
+      Your life, little girl, is an empty page, 
+      That men will want to write on
+    zh:
+      - 女孩你等在空的舞台上
+      - 你在空空的舞台上等待
+      - 你在空空的舞台上等待
+      - 你等在空荡的舞台之上
+      - 女孩，你在空荡舞台等待
+
+  - idx: 9
+    en: Never again, will the chokey door slam.
+    par: |
+      Never again, will the chokey door slam.
+      Never again, will I be bullied and
+      Never again will I doubt it when my mummy says I'm a miracle.
+      Never again will we live behind doors
+    zh:
+      - 再也不敲响驴子的门口
+      - 再也不会锁门砰然关闭
+      - 大门再不会一声一声扣
+      - 大门再不会砰然地关闭
+      - 永不再来，锁喉门将响彻
+
+  - idx: 10
+    en: Think of it as personality dialysis
+    par: |
+      Don't be offended by my frank analysis
+      Think of it as personality dialysis
+      Now that I've chosen to become a Pal, a sis or an advisor
+      There's nobody wiser!
+      Not when it comes to POPULAR!
+      I know about popular
+      And with an assist from me
+      To be who you'll be
+      Instead of dreary who you were...
+      There's nothing that can stop you From becoming popu-ler...
+    zh: 
+      - 你就把它当作是个性的肾析
+      - 就当是人格的洗礼洗洗透透
+      - 就当是进行人格的血液透析
+      - 就当是进行人格的血液透析
+      - 把它当作性格透析
+
+  - idx: 11
+    en: Have you ever felt like nobody was there
+    par: |
+      Have you ever felt like nobody was there
+      Have you ever felt forgotten in the middle of nowhere
+      Have you ever felt like you could disappear
+      Like you could fall and no one would hear
+    zh:
+      - 你可曾觉得没有人在身边
+      - 你是否也感到没人在旁观
+      - 你有没有体会过没人怀抱
+      - 你有没有感到没人陪伴你
+      - 你是否曾感到无人在身边
+
+  - idx: 12
+    en: My power flurries through the air into the ground
+    par: |
+      My power flurries through the air into the ground
+      My soul is spiraling in frozen fractals all around
+      And one thought crystallizes like an icy blast
+    zh:
+      - 我的力量透过空气流进土里
+      - 我的力量风驰电掣冲破地面
+      - 我的能量在空中呼啸着入地
+      - 我的力量呼啸而过席卷大地
+      - 我的魔力飘散空中，深入泥土。
+
+  - idx: 13
+    en: My mother was a genius
+    par: |
+      My grandfather was a fire and brimstone preacher
+      But there are things that the Homilies and hymns won't teach ya
+      My mother was a genius
+      My father commanded respect
+      When they died they left no instructions
+      Just a legacy to protect
+    zh:
+      - 我母亲是个天才
+      - 祖母是位大才女
+      - 我妈妈是个天才
+      - 我的妈妈是天才
+      - 我妈妈是个天才
+
+  - idx: 14
+    en: in a tiny bonanza, just a corpse and me
+    par: |
+      And I got my first job flying for a mortician
+      in a tiny bonanza, just a corpse and me
+      Five dollars an hour for flying dead bodies
+      I had to climb over their faces just to get to my seat
+    zh:
+      - 微小的狂潮中只有尸体和我
+      - 只有一块小小的领地和死尸
+      - 一个狭小空间只有我和尸体
+      - 小小的淘金城只有我和尸体
+      - 在小波纳扎里，只有我和尸体
+
+  - idx: 15
+    en: Conceal don't feel
+    par: |
+      Conceal don't feel
+      Don't let them know
+      Well now they know
+    zh:
+      - 你感觉不到
+      - 隐藏感受
+      - 掩饰不觉
+      - 隐藏不露
+      - 隐藏不语
+
+  - idx: 16
+    en: Better beware, be canny and careful 
+    par: |
+      You are sixteen going on seventeen 
+      Baby, it's time to think
+      Better beware, be canny and careful 
+      Baby, you're on the brink
+    zh:
+      - 最好要注意要小心翼翼
+      - 还是小心一点不要冒昧
+      - 最好小心翼翼机灵善变
+      - 最好小心翼翼精明干练
+      - 更要警惕，聪明点，小心点
+
+  - idx: 17
+    en: Because you've learned, because you've learned
+    par: |
+      Step out, step out of the sun
+      If you keep getting burned
+      Step out, step out of the sun
+      Because you've learned, because you've learned
+    zh:
+      - 因为你学会了成长
+      - 因你懂因你懂因你
+      - 因为你已经学会了
+      - 因为你已懂得明白
+      - 学会放手，学会释怀
+
+  - idx: 18
+    en: You don't have to convince me
+    par: |
+      I don't need you to sell me on reasons to want you
+      I don't need you to search for the proof that I should
+      You don't have to convince me
+      You don't have to be scared you're not enough
+      'Cause what we've got going is good
+    zh:
+      - 你不需要说服我
+      - 不用你去说服我
+      - 不需要说服我喽
+      - 你不必说服我呦
+      - 你不用来说服我
+
+  - idx: 19
+    en: Can't hold it back anymore
+    par: |
+      Let it go
+      Let it go
+      Can't hold it back anymore
+    zh:
+      - 再也无法挽留它
+      - 再也无力去挽留
+      - 再也无力去挽留
+      - 无法再压抑下去
+      - 再也无法抑制住
+
+  - idx: 20
+    en: And need help to lift your head
+    par: |
+      Do you wake up in the morning
+      And need help to lift your head
+      Do you read obituaries
+      And feel jealous of the dead
+      It's like living on a cliffside
+      Not knowing when you'll dive
+      Do you know, Do you know
+      What it's like to die alive
+    zh:
+      - 抬头也需要依靠
+      - 需要别人扶你起
+      - 仰起头需要搀扶
+      - 需要人扶你抬起
+      - 需要帮助抬起头
+
+  - idx: 21
+    en: Your life, little girl, is an empty page, 
+    par: |
+      You wait, little girl, on an empty stage, 
+      For fate to turn the light on
+      Your life, little girl, is an empty page, 
+      That men will want to write on
+    zh:
+      - 女孩你的生活空空荡荡
+      - 小妹妹你的人生是空白
+      - 姑娘你的一生一片空白
+      - 姑娘你的一生白纸一张
+      - 你的生活如白纸，等待书写。
+  
+  - idx: 22
+    en: We can't compete with all that
+    par: |
+      I don't need more reminders of all that's been broken
+      I don't need you to fix what I'd rather forget
+      Clear the slate and start over
+      Try to quiet the noises in your head
+      We can't compete with all that
+    zh:
+      - 我们都不能相争
+      - 那么多没法比较
+      - 那一切不可匹敌
+      - 那些咱没法比拟
+      - 无法与那些相比
+
+  - idx: 23
+    en: It lays me so low
+    par: |
+      You don't know
+      I know you don't know
+      You say that you're hurting
+      It sure doesn't show
+      You don't know
+      It lays me so low
+      When you say let go
+      And I say You don't know
+    zh:
+      - 让我很低调
+      - 让我心灰败
+      - 使我如此低
+      - 让我好落寞
+      - 我心受煎熬
+
+  - idx: 24
+    en: To reach the unreachable stars!
+    par: |
+      Still strove, with his last ounce of courage,
+      To reach the unreachable stars!
+    zh:
+      - 到遥不可及的星际
+      - 才能到达星星之巅
+      - 才能到达那片天际
+      - 要飞到最远的星宿
+      - 触摸星辰，不屈不挠！
+
+  - idx: 25
+    en: Just because you find that life's not fair, 
+    par: |
+      Just because you find that life's not fair, 
+      it doesn't mean that you just have to grin and bear it!
+      If you always take it on the chin and wear it
+      Nothing will change.
+    zh:
+      - 只因你发现生活不公平
+      - 只因为你发现生活不公
+      - 只因为发现人生不公平
+      - 只因为你发现生活不公
+      - 生活不公，何必默默承受
+
+  - idx: 26
+    en: For five more minutes
+    par: |
+      We're one of a kind no category
+      Too many years lost in his story
+      We're free to take, our crowning glory
+      For five more minutes
+      We're Six
+    zh:
+      - 再多的五分钟
+      - 再撑过五分钟
+      - 再坚持五分钟
+      - 再等五分钟吧
+      - 再五分钟就好
+
+  - idx: 27
+    en: Timid and shy and scared are you 
+    par: |
+      Totally unprepared are you
+      To face a world of men
+      Timid and shy and scared are you 
+      Of things beyond your ken
+    zh:
+      - 又胆怯害怕你是谁
+      - 胆小害羞胆小胆怯
+      - 胆小害羞害怕的你
+      - 胆小害羞又怕什么
+      - 胆小害羞害怕的你
+
+  - idx: 28
+    en: Heard all about these rockin' chicks
+    par: |
+      Heard all about these rockin' chicks
+      Loved every song and each remix
+      So I went out and found them, And we lay down an album
+      Now I don't need your love, all I need is Six
+    zh:
+      - 听到这些摇滚的妞
+      - 听说摇滚的妹子们
+      - 听说过这些摇滚妞
+      - 听说这些摇滚女孩
+      - 听闻这些摇滚女孩
+
+  - idx: 29
+    en: Not knowing when you'll dive
+    par: |
+      Do you wake up in the morning
+      And need help to lift your head
+      Do you read obituaries
+      And feel jealous of the dead
+      It's like living on a cliffside
+      Not knowing when you'll dive
+      Do you know, Do you know
+      What it's like to die alive
+    zh:
+      - 不知何时潜潮
+      - 不知何时潜航
+      - 不知何时潜入
+      - 不知何时潜入
+      - 不知何时跳崖

@@ -444,6 +444,134 @@ def get_test_musical_rhyme(split: str, silent: bool = False, cache_dir: str = No
     print("get test_musical_rhyme ok with size", len(data))
     return data
 
+def get_test_musical_rhyme_no_tuning(split: str, silent: bool = False, cache_dir: str = None, few_shot_prompt = False) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    def get_rhyme_rule(idx):
+        if idx == 0:
+            return -1
+        group = [['a', 'ia', 'ua'], 
+                ['o', 'e', 'uo'], 
+                ['ie', 'ue'],
+                ['er', 'v', 'i', 'zhi', 'chi', 'shi', 'ri', 'zi', 'ci', 'si'],
+                ['u'],
+                ['ai', 'uai'],
+                ['ei', 'ui'],
+                ['ao', 'iao'],
+                ['ou', 'iu'],
+                ['an', 'ian', 'uan', 'van'],
+                ['en', 'in', 'un', 'vn', 'uen'],
+                ['ang', 'iang', 'uang'],
+                ['eng', 'ing', 'ueng', 'ong', 'iong']]
+        idx -= 1
+        str = f'''The rhyme (final sound) of the last generated Chinese character should be one of these Pinyin finals: {group[idx]}.'''
+        return str
+
+    print(f'Loading test_musical_rhyme_no_tuning dataset ({split} split) from offline...')
+    with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('input done', len(dataset))
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+
+    occur_norhyme = {}
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        trans = zh
+        for ch in ',./，。、！!?？：:':
+            trans = trans.replace(ch, '')
+        length = len(trans)
+        rhyme = get_rhyme_id(zh)
+        if en + str(length) in occur_norhyme:
+            continue
+        occur_norhyme[en + str(length)] = True
+        prompt = f'''I will give you an English lyric, and you need to translation it into Chinese with exactly {length} characters. {get_rhyme_rule(rhyme)} Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if few_shot_prompt:
+            prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. {get_rhyme_rule(rhyme)}
+Example 1:
+The input sentence is "you are sixteen, going on seventeen", the translation requires 10 Chinese characters. {get_rhyme_rule(get_rhyme_id('岁'))}
+The translated version is: 你十六岁，即将要十七岁
+
+Example 2:
+The input sentence is "I am I, Don Quixote, the Lord of La Mancha", the translation requires 13 Chinese characters. {get_rhyme_rule(get_rhyme_id('豪'))}
+The translated version is: 正是我，堂吉诃德，拉曼查的英豪
+
+Example 3:
+The input sentence is "even when the dark comes crushing through", the translation requires 9 Chinese characters. {get_rhyme_rule(get_rhyme_id('来'))}
+The translated version is: 就算那黑暗突然袭来
+
+Example 4:
+The input sentence is "Just because you find that life's not fair", the translation requires 11 Chinese characters. {get_rhyme_rule(get_rhyme_id('平'))}
+The translated version is: 若你只是觉得生活不公平
+
+Example 5:
+The input sentence is "the phantom of the opera is there", the translation requires 8 Chinese characters. {get_rhyme_rule(get_rhyme_id('里'))}
+The translated version is: 歌剧魅影就在那里
+
+            Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get test_musical_rhyme ok with size", len(data))
+    return data
+
+def get_test_musical_no_tuning(split: str, silent: bool = False, cache_dir: str = None, few_shot_prompt = False) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+    print(f'Loading test_musical_no_tuning dataset ({split} split) from offline...')
+    with open('./data/musical_test.json', encoding="utf-8") as file_obj:
+        dataset = json.load(file_obj)
+    print('input done', len(dataset))
+
+    data = defaultdict(lambda: defaultdict(list))
+    fir = True
+
+    occur_norhyme = {}
+    for row in dataset:
+        en = row['en']
+        zh = row['zh']
+        trans = zh
+        for ch in ',./，。、！!?？：:':
+            trans = trans.replace(ch, '')
+        length = len(trans)
+        rhyme = get_rhyme_id(zh)
+        if en + str(length) in occur_norhyme:
+            continue
+        occur_norhyme[en + str(length)] = True
+        prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if few_shot_prompt:
+            prompt = f'''I will give you a English lyric, and you need to translation it into Chinese with exactly {length} characters. Some examples:
+Example 1:
+The input sentence is "you are sixteen, going on seventeen", the translation requires 10 Chinese characters
+The translated version is: 你十六岁，即将要十七岁
+
+Example 2:
+The input sentence is "I am I, Don Quixote, the Lord of La Mancha", the translation requires 13 Chinese characters
+The translated version is: 正是我，堂吉诃德，拉曼查的英豪
+
+Example 3:
+The input sentence is "even when the dark comes crushing through", the translation requires 9 Chinese characters
+The translated version is: 就算那黑暗突然袭来
+
+Example 4:
+The input sentence is "Just because you find that life's not fair", the translation requires 11 Chinese characters
+The translated version is: 若你只是觉得生活不公平
+
+Example 5:
+The input sentence is "the phantom of the opera is there", the translation requires 8 Chinese characters
+The translated version is: 歌剧魅影就在那里
+
+            Please only output the translated results and nothing more. The English lyrics is: {en}. Then the translation result is:'''
+        if fir:
+            print("prompt = ", prompt)
+            fir = False
+        data[prompt]['pairs'] = [(0, 1)]
+        data[prompt]['responses'] = ['aaa', 'bbb']
+        data[prompt]['sft_target'] = zh
+    print("get test_musical ok with size", len(data))
+    return data
+
 def get_pure_length(split: str, silent: bool = False, cache_dir: str = None) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
     print(f'Loading purelength dataset ({split} split) from offline...')
     with open('./data/purelength_{}.json'.format(split), encoding="utf-8") as file_obj:
@@ -772,7 +900,7 @@ def get_prompt_refine(split: str, silent: bool = False, cache_dir: str = None) -
     print("get prompt refine ok!")
     return data
 
-def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = None, use_filtered_datasets: int = 0, random_drop_rhyme: float = 0.) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
+def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = None, use_filtered_datasets: int = 0, random_drop_rhyme: float = 0., few_shot_prompt: bool = False) -> Dict[str, Dict[str, Union[List[Tuple[int, int]], List[str], str]]]:
     """Load the given dataset by name. Supported by default are 'shp', 'hh', and 'se'."""
     if name == 'shp':
         data = get_shp(split, silent=silent, cache_dir=cache_dir)
@@ -818,6 +946,10 @@ def get_dataset(name: str, split: str, silent: bool = False, cache_dir: str = No
         data = get_test_musical(split, silent=silent, cache_dir=cache_dir)
     elif name == 'musical_test_rhyme':
         data = get_test_musical_rhyme(split, silent=silent, cache_dir=cache_dir)
+    elif name == 'musical_test_rhyme_no_tuning':
+        data = get_test_musical_rhyme_no_tuning(split, silent=silent, cache_dir=cache_dir, few_shot_prompt=few_shot_prompt)
+    elif name == 'musical_test_no_tuning':
+        data = get_test_musical_no_tuning(split, silent=silent, cache_dir=cache_dir, few_shot_prompt=few_shot_prompt)
     # elif name == 'prompt_refine':
     #     data = get_prompt_refine(split, silent=silent, cache_dir=cache_dir)
     else:

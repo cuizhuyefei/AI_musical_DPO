@@ -48,7 +48,7 @@ from pipeline.gold_reference import AvenueQ, YouAreNotAlone, OnlyUs, IMissTheMou
 #     json.dump(ou, file_obj, ensure_ascii=False)
 # exit(0)
 
-use_reward = False
+use_reward = True
 
 def choose_best(line_res, is_end):
     def align_score(gt, y):
@@ -206,6 +206,7 @@ def cal_best_data(data):
 # scorer = BERTScorer(lang="zh")
 from comet import download_model, load_from_checkpoint
 model_path = download_model("Unbabel/wmt22-comet-da")
+print(model_path)
 model = load_from_checkpoint(model_path)
 def cal_bleu(data):
     from sacrebleu import corpus_bleu
@@ -431,9 +432,17 @@ if __name__ == '__main__':
     #     llama = json.load(file_obj)
     # print("for llama_v32_40+40:")
     # new_data = cal_all_metrics(llama)
-    with open('llama_v33_songs_allres_N40+40.json', encoding="utf-8") as file_obj:
+    # with open('llama_v33_songs_allres_N40+40.json', encoding="utf-8") as file_obj:
+    #     llama = json.load(file_obj)
+    # print("for llama_v33_40+40:")
+    # new_data = cal_all_metrics(llama)
+    # with open('gpt_prompt_allres.json', encoding="utf-8") as file_obj:
+    #     llama = json.load(file_obj)
+    # print("for gpt_prompt:")
+    # new_data = cal_all_metrics(llama)
+    with open('gpt_prompt_5shot_allres.json', encoding="utf-8") as file_obj:
         llama = json.load(file_obj)
-    print("for llama_v33_40+40:")
+    print("for gpt_prompt_5shot:")
     new_data = cal_all_metrics(llama)
 
 

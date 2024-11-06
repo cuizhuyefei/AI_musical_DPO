@@ -8,11 +8,12 @@ from utils_pipe import extract_chinese, get_rhyme_id, get_rhyme_rule, get_syllab
 from openai import OpenAI
 import torch
 
-def eval_gpt(prompt, N, T=0.2):
+def eval_gpt(prompt, N, T=0.7):
+    assert use_kimi
     for kase in range(5):
       try:
         response = client.chat.completions.create(
-            model="moonshot-v1-8k" if use_kimi else "gpt-3.5-turbo",
+            model="moonshot-v1-8k" if not use_gpt4o_instead else "gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             n=N,
             temperature=T
@@ -39,7 +40,117 @@ def align_score(ref, str):
   score = f[len(ref)-1][len(s)-1]
   return score
 
+pure_gpt = True
+few_shot_prompt = True
 def generate_par(par, syllables, use_kimi, use_reward, N, N2, verbose=True):
+  if pure_gpt:
+    par_list = [s for s in par.split('\n') if len(s.strip())>0]
+    par = '\n'.join(par_list)
+    assert len(par_list) == len(syllables)
+    numbers_list = [sum(syllables[i]) for i in range(len(par_list))]
+    while True:
+      prompt_kimi = f'''Please translate the following English paragraph into Chinese, adhering strictly to the specified number of Chinese characters per line (commas do not count towards the character count). Maintain a strict line-by-line correspondence between the English and Chinese versions, ensuring the number of lines remains the same.
+
+  The English paragraph is: {par}
+  The required character count for each line is: {numbers_list}
+  IMPORTANT: Output ONLY the translated Chinese paragraph. Do not include any explanations, notes, or additional text. Your translation must strictly follow the given format and character counts.
+  The translated version is:'''
+      if few_shot_prompt == True:
+        prompt_kimi = f'''Please translate the following English paragraph into Chinese, adhering strictly to the specified number of Chinese characters per line (commas do not count towards the character count). Maintain a strict line-by-line correspondence between the English and Chinese versions, ensuring the number of lines remains the same. Some examples:
+Example 1:
+The English paragraph is: You are sixteen going on seventeen, 
+baby it's time to think
+Better beware, be canny and careful, 
+baby you're on the brink
+The required character count for each line is: [10, 8, 9, 9]
+The translated version is:
+你十六岁，即将要十七岁
+宝贝呀，该去思考了
+应当警觉、谨慎和当心，
+宝贝，你就在危险边缘
+
+Example 2:
+The English paragraph is: I am I, Don Quixote, the Lord of La Mancha
+My destiny calls and I go
+And the wild winds of fortune will carry me onward
+Oh, whithersoever they blow
+Whithersoever they blow, onward to glory I go
+The required character count for each line is: [13, 7, 10, 6, 11]
+The translated version is:
+正是我，堂吉诃德，拉曼查的英豪
+我的宿命召我前进
+幸运的狂飙会策我向前
+任他风吹雨打
+任他风吹雨打，向荣誉进发！
+
+Example 3:
+The English paragraph is: Even when the dark comes crashing through
+When you need a friend to carry you
+And when you're broken on the ground
+You will be found
+The required character count for each line is: [12, 10, 7, 5]
+The translated version is:
+即使当你的世界被黑暗吞没
+当你需要朋友携手同行
+当你摔落在地面
+你会被发现
+
+Example 4:
+The English paragraph is: Just because you find that life's not fair,
+it doesn't mean that you just have to grin and bear it!
+If you always take it on the chin and wear it
+Nothing will change.
+The required character count for each line is: [11, 15, 9, 7]
+The translated version is:
+若你只是觉得生活不公平，
+那并不意味着你必须要微笑着忍受
+如果你总是忍气吞声
+没有事情会改变
+
+Example 5:
+The English paragraph is: and do I dream again?
+for now I find
+the phantom of the opera is there
+inside my mind
+The required character count for each line is: [7, 5, 8, 4]
+The translated version is:
+我是否又做梦了
+因为我发现
+歌剧魅影就在那里
+在我心中
+
+    The English paragraph is: {par}
+    The required character count for each line is: {numbers_list}
+    IMPORTANT: Output ONLY the translated Chinese paragraph. Do not include any explanations, notes, or additional text. Your translation must strictly follow the given format and character counts.
+    The translated version is:'''        
+      response = eval_gpt(prompt_kimi, 1, T=0.7)
+      response_list = [s for s in response[0].split('\n') if len(s.strip())>0]
+      if len(response_list) != len(par_list):
+        print('[GG retry]', response_list, par_list, response)
+      else:
+        break
+    assert len(response_list) == len(par_list)
+    reward12 = [[0] for i in range(len(par_list))]
+    reward3 = [[0] for i in range(len(par_list))]
+    # print('DEBUG', N, inputs, '-----------', sols)
+    if use_reward:
+      reward12 = reward.eval_reward12_batch(par, par_list, [[res] for res in response_list])
+      reward3 = reward.eval_reward3_batch(par, par_list, [[res] for res in response_list])
+    gen_res = []
+    for i in range(len(par_list)):
+      data_point = {}
+      data_point['en_line'] = par_list[i]
+      data_point['zh_trans'] = [response_list[i]]
+      data_point['all_zh_trans'] = [response_list[i]]
+      data_point['par'] = par
+      data_point['len_constraint'] = numbers_list[i]
+      data_point['best_rhyme'] = 0
+      data_point['rhyme_type'] = [get_rhyme_id(response_list[i])]
+      data_point['reward12'] = reward12[i]
+      data_point['reward3'] = reward3[i]
+      gen_res.append(data_point)
+    return '\n'.join(response_list), gen_res
+
   torch.cuda.empty_cache()
   if len(syllables) == 0:
     syllables = count_syllables(par)
@@ -200,11 +311,12 @@ def generate_song(input_lyric, syllables, use_kimi, use_reward, N, N2):
 # AvenueQ(), YouAreNotAlone(), OnlyUs(), IMissTheMountains(), YouDontKnow(), Popular(), RevoltingChildren(), Six()
 input_lyric, syllables = AvenueQ()
 syllables = [[sum(x)] for x in syllables] # no list, just a number
-use_kimi = False # 记得开成False！！
-use_reward = False
-use_N2 = True # 40+40
-N = 40 # !
-N2 = 40
+use_kimi = True # 记得开成False！！
+use_gpt4o_instead = True
+use_reward = True
+use_N2 = False # 40+40
+N = 1 # !
+N2 = 0
 print('N=', N, 'use_N2=', use_N2)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -212,9 +324,12 @@ parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
 sys.path.append(parent_dir)
 
 if use_kimi:
-  client = OpenAI(
-    api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
-    base_url="https://api.moonshot.cn/v1")
+  if use_gpt4o_instead: # use gpt4o
+    client = OpenAI()
+  else:
+    client = OpenAI(
+      api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
+      base_url="https://api.moonshot.cn/v1")
 else:
   from llm_score import llamaGenAPI
   llama = llamaGenAPI() # nofinetune=True for N=20
@@ -229,11 +344,11 @@ if __name__ == '__main__':
   # songs = [AvenueQ, YouAreNotAlone, OnlyUs, IMissTheMountains, YouDontKnow]
   songs_results = {}
   all_gen_results = {}
-  if os.path.exists('llama_v33_songs_res_N40+40.json'):
-    with open('llama_v33_songs_res_N40+40.json', encoding="utf-8") as file_obj:
+  if os.path.exists('gpt_prompt_5shot_res.json'):
+    with open('gpt_prompt_5shot_res.json', encoding="utf-8") as file_obj:
         songs_results = json.load(file_obj)
-  if os.path.exists('llama_v33_songs_allres_N40+40.json'):
-    with open('llama_v33_songs_allres_N40+40.json', encoding="utf-8") as file_obj:
+  if os.path.exists('gpt_prompt_5shot_allres.json'):
+    with open('gpt_prompt_5shot_allres.json', encoding="utf-8") as file_obj:
         all_gen_results = json.load(file_obj)
   for songname in songs:
     if songname.__name__ in songs_results:
@@ -244,7 +359,7 @@ if __name__ == '__main__':
     result, gen_res = generate_song(input_lyric, syllables, use_kimi, use_reward, N, N2)
     songs_results[songname.__name__] = result
     all_gen_results[songname.__name__] = gen_res
-    with open('llama_v33_songs_res_N40+40.json', 'w', encoding='utf-8') as file_obj:
+    with open('gpt_prompt_5shot_res.json', 'w', encoding='utf-8') as file_obj:
       json.dump(songs_results, file_obj, ensure_ascii=False)
-    with open('llama_v33_songs_allres_N40+40.json', 'w', encoding='utf-8') as file_obj:
+    with open('gpt_prompt_5shot_allres.json', 'w', encoding='utf-8') as file_obj:
       json.dump(all_gen_results, file_obj, ensure_ascii=False)

@@ -13,6 +13,7 @@ from utils import (
 )
 from typing import Optional, Dict, List, Union, Tuple
 import re, json, random, time, traceback
+from openai import OpenAI
 
 def disable_dropout(model: torch.nn.Module):
     """Disable dropout in a model."""
@@ -220,20 +221,11 @@ def run_musical_length_generation(tokenizer, policy_model):
     return res
 
 
-def get_gpt4_gen(prompt, use_kimi=True):
-    from openai import OpenAI
-    if use_kimi:
-        client = OpenAI(
-            api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
-            base_url="https://api.moonshot.cn/v1")
-    else:
-        client = OpenAI(
-            api_key="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",
-        )
+def get_gpt4_gen(prompt, use_kimi=True, client=None):
     while True:
         try:
             response = client.chat.completions.create(
-                model="moonshot-v1-8k" if use_kimi else "gpt-4",
+                model="moonshot-v1-8k" if use_kimi else "gpt-4o",
                 messages=[
                 {"role": "user", "content": f'''{prompt}'''}
                 ]
@@ -296,201 +288,65 @@ def cal_length_test_acc():
     print("mean err =", err / tot, err, tot)
     print("------------------------------------------------------------------------")
 
-#loading tokenizer
-# tokenizer_name_or_path = 'hfl/chinese-alpaca-2-13b'
-# print(f'Loading tokenizer {tokenizer_name_or_path}')
-# tokenizer = transformers.LlamaTokenizer.from_pretrained(
-#     tokenizer_name_or_path, 
-#     # cache_dir=get_local_dir(['.cache', '/scr-ssd', '/scr'])
-# )
-# if tokenizer.pad_token_id is None:
-#     tokenizer.pad_token_id = tokenizer.eos_token_id
-# print("load tokenizer ok!")
+def inference_gpt(few_shot_prompt):
+    use_kimi = False
+    client = OpenAI()
+    # raw_data = get_dataset(name='musical_test_rhyme_no_tuning', split='test')
+    # gpt4_gen = []
+    # for idx, (prompt, data_point) in enumerate(raw_data.items()):
+    #     sample = get_gpt4_gen(prompt, use_kimi, client)
+    #     gpt4_gen.append(sample)
+    #     print(idx, len(raw_data))
+    #     if idx >= 499:
+    #         break
+    # with open('gpt4.json', 'w', encoding='utf-8') as file_obj:
+    #     json.dump(gpt4_gen, file_obj, ensure_ascii=False)
+    # raw_data = get_dataset(name='musical_test_no_tuning', split='test')
+    # gpt4_gen = []
+    # for idx, (prompt, data_point) in enumerate(raw_data.items()):
+    #     sample = get_gpt4_gen(prompt, use_kimi, client)
+    #     gpt4_gen.append(sample)
+    #     print(idx, len(raw_data))
+    #     if idx >= 499:
+    #         break
+    # with open('gpt4_worhyme.json', 'w', encoding='utf-8') as file_obj:
+    #     json.dump(gpt4_gen, file_obj, ensure_ascii=False)
+    
+    raw_data = get_dataset(name='musical_test_no_tuning', split='test', few_shot_prompt=few_shot_prompt)
+    output_file = 'gpt4_worhyme_5shot.json' if few_shot_prompt else 'gpt4_worhyme.json'
+    print('[output file]', len(raw_data.items()), output_file)
+    gpt4_gen = []
+    for idx, (prompt, data_point) in enumerate(raw_data.items()):
+        sample = get_gpt4_gen(prompt, use_kimi, client)
+        gpt4_gen.append(sample)
+        print(idx, len(raw_data))
+    with open(output_file, 'w', encoding='utf-8') as file_obj:
+        json.dump(gpt4_gen, file_obj, ensure_ascii=False)
+    # raw_data = get_dataset(name='musical_test_no_tuning', split='test', few_shot_prompt=True)
+    # gpt4_gen = []
+    # for idx, (prompt, data_point) in enumerate(raw_data.items()):
+    #     sample = get_gpt4_gen(prompt, use_kimi, client)
+    #     gpt4_gen.append(sample)
+    #     print(idx, len(raw_data))
+    #     if idx >= 499:
+    #         break
+    # with open('gpt4_worhyme_5shot.json', 'w', encoding='utf-8') as file_obj:
+    #     json.dump(gpt4_gen, file_obj, ensure_ascii=False)        
 
-# prepare data
-data = [{
-            'prompt': 'The Chinese translation of the English lyric "You are sixteen, going on seventeen" is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': 'The Chinese translation of the English lyric "Even when the dark comes crushing through" is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 8 characters. \
-Please only output the translated results and nothing more. The English lyrics is: You are sixteen, going on seventeen. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 9 characters. \
-Please only output the translated results and nothing more. The English lyrics is: Even when the dark comes crushing through. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 8 characters. \
-The word boundary should be 00010000, where 1 means "there should be a word boundary after this syllable" and 0 means "we do not care if there is a boundary".\
-Please only output the translated results and nothing more. The English lyrics is: You are sixteen, going on seventeen. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 9 characters. \
-The word boundary should be 000000000, where 1 means "there should be a word boundary after this syllable" and 0 means "we do not care if there is a boundary".\
-Please only output the translated results and nothing more. The English lyrics is: Even when the dark comes crushing through. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': '英文歌词“You are sixteen, going on seventeen”的中文翻译是:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': '英文歌词“Even when the dark comes crushing through”的中文翻译是:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': '我会给你一句英文歌词，你需要将其翻译成中文，精确到8个字。\
-请仅输出翻译结果。英文歌词是：You are sixteen, going on seventeen，则翻译结果是：',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': '我会给你一句英文歌词，你需要将其翻译成中文，精确到9个字。\
-请仅输出翻译结果。英文歌词是：Even when the dark comes crushing through，则翻译结果是：',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },{
-            'prompt': '  - 我会给你一句英文歌词，你需要将其翻译成中文，精确到8个字。\
-中文词汇的边界应该是00010000，其中1表示“这个音节后面应该有一个词汇边界”，0表示“我们不关心是否有边界”。请仅输出翻译结果。\
-英文歌词是：You are sixteen, going on seventeen，则翻译结果是：',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': '  - 我会给你一句英文歌词，你需要将其翻译成中文，精确到9个字。\
-中文词汇的边界应该是000000000，其中1表示“这个音节后面应该有一个词汇边界”，0表示“我们不关心是否有边界”。请仅输出翻译结果。\
-英文歌词是：Even when the dark comes crushing through，则翻译结果是：',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-    ]
-# print("prepare data finished!")
+    # use_kimi = True
+    # client = OpenAI(
+    #     api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
+    #     base_url="https://api.moonshot.cn/v1")
+    # raw_data = get_dataset(name='musical_test_rhyme_no_tuning', split='test')
+    # gpt4_gen = []
+    # for idx, (prompt, data_point) in enumerate(raw_data.items()):
+    #     sample = get_gpt4_gen(prompt, use_kimi, client)
+    #     gpt4_gen.append(sample)
+    #     if idx >= 9:
+    #         break
+    #     print(idx, len(raw_data), use_kimi)
+    # with open('kimi.json', 'w', encoding='utf-8') as file_obj:
+    #     json.dump(gpt4_gen, file_obj, ensure_ascii=False)
 
-# loading model
-# policy_model_dtype = getattr(torch, 'float32')
-# policy_model = transformers.AutoModelForCausalLM.from_pretrained(
-#     'hfl/chinese-alpaca-2-13b', 
-#     cache_dir=get_local_dir(['.cache',]), 
-#     low_cpu_mem_usage=True, 
-#     torch_dtype=policy_model_dtype)
-# disable_dropout(policy_model)
-# device = 'cuda'
-# policy_model = policy_model.to(device)
-
-
-length_data = [{
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 8 characters. \
-Please only output the translated results and nothing more. The English lyrics is: You are sixteen, going on seventeen. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 9 characters. \
-Please only output the translated results and nothing more. The English lyrics is: Even when the dark comes crushing through. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 8 characters. \
-Please only output the translated results and nothing more. The English lyrics is: Even when the dark comes crushing through. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 9 characters. \
-Please only output the translated results and nothing more. The English lyrics is: You are sixteen, going on seventeen. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 14 characters. \
-Please only output the translated results and nothing more. The English lyrics is: My soul is spiraling in frozen fractals all around. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-        {
-            'prompt': 'I will give you a English lyric, and you need to translation it into Chinese with exactly 9 characters. \
-Please only output the translated results and nothing more. The English lyrics is: This is my Quest to follow that star. Then the translation result is:',
-            'responses': ['', ''],
-            'pairs': [(0, 1)],
-            'sft_target': '',    
-        },
-]
-
-# eval_model(tokenizer, policy_model, length_data)
-cal_length_test_acc()
-# state_dict = torch.load('.cache/zhuorui/parallel_length_sft_2023-12-04_05-49-24_265219/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# policy_model = policy_model.to(device)
-# cal_length_test_acc(tokenizer, policy_model)
-# eval_model(tokenizer, policy_model, length_data)
-
-# res = run_musical_length_generation(tokenizer, policy_model)
-# with open('data_for_DPO.json', 'w', encoding='utf-8') as file_obj:
-#     json.dump(res, file_obj, ensure_ascii=False)
-
-# print("original model:---------------------------------------")
-# eval_model(tokenizer, policy_model, data)
-
-# print("translation:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_translation_sft_2023-12-03_22-43-13_740607/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
-
-# print("translation_zh:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_translation_zh_sft_2023-12-04_01-42-01_195500/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
-
-# print("length:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_length_sft_2023-12-04_05-49-24_265219/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
-
-# print("length_zh:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_length_zh_sft_2023-12-04_08-00-58_939504/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
-
-# print("word_boundary:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_word_boundary_sft_2023-12-04_06-25-55_149065/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
-
-# print("word_boundary_zh:---------------------------------------")
-# state_dict = torch.load('.cache/zhuorui/parallel_word_boundary_zh_sft_2023-12-04_07-11-51_477085/LATEST/policy.pt', map_location='cpu')
-# policy_model.load_state_dict(state_dict['state'])
-# eval_model(tokenizer, policy_model, data)
+inference_gpt(few_shot_prompt=False)
+inference_gpt(few_shot_prompt=True)

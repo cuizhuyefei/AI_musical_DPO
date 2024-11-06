@@ -223,7 +223,7 @@ class EvalReward:
             # cache_dir=get_local_dir(['.cache', '/scr-ssd', '/scr'])
         )
         # loading model
-        policy_model_dtype = getattr(torch, 'float32')
+        policy_model_dtype = getattr(torch, 'float16')
         print(f'Loading model')
         # from transformers import LlamaConfig,LlamaForCausalLM,LlamaTokenizer
         # from accelerate import init_empty_weights,infer_auto_device_map,load_checkpoint_in_model,dispatch_model
@@ -233,24 +233,20 @@ class EvalReward:
         # self.policy_model2.load_state_dict(state_dict['state'])
         # self.policy_model2 = dispatch_model(self.policy_model2,device_map=device_map) #并分配到具体的设备上
 
-
+        print('loading reward model', 'cuizhuyefei/rewardbasic')
         self.policy_model2 = transformers.AutoModelForCausalLM.from_pretrained(
-            'hfl/chinese-alpaca-2-13b', 
+            '/usr0/home/zhuoruiy/backup/rewardbasic_fp16', 
             cache_dir=get_local_dir(['.cache',]), 
             low_cpu_mem_usage=True, 
             torch_dtype=policy_model_dtype)
-        state_dict = torch.load('.cache/zhuorui/reward_ft_6_2024-01-03_22-36-12_077105/LATEST/policy.pt', map_location='cpu')
-        self.policy_model2.load_state_dict(state_dict['state'])
         device = 'cuda:0'
         self.policy_model2.to(device)
         self.policy_model2.eval() # set to eval mode!
         self.policy_model3 = transformers.AutoModelForCausalLM.from_pretrained(
-            'hfl/chinese-alpaca-2-13b', 
+            '/usr0/home/zhuoruiy/backup/rewardadvanced_fp16', 
             cache_dir=get_local_dir(['.cache',]), 
             low_cpu_mem_usage=True, 
             torch_dtype=policy_model_dtype)
-        state_dict = torch.load('.cache/zhuorui/reward3_2_2024-01-07_05-23-50_091251/LATEST/policy.pt', map_location='cpu')
-        self.policy_model3.load_state_dict(state_dict['state'])
         device = 'cuda:1'
         self.policy_model3.to(device)
         self.policy_model3.eval() # set to eval mode!

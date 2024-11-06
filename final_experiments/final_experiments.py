@@ -6,11 +6,15 @@ from utils_pipe import extract_chinese, get_rhyme_id, get_rhyme_rule, get_syllab
 from openai import OpenAI
 import torch
 
+use_gpt4o_instead = False
+if use_gpt4o_instead:
+  print('[NOTE] Using GPT-4o!!!')
+
 def eval_gpt(prompt, N, T=0.2):
     for kase in range(5):
       try:
         response = client.chat.completions.create(
-            model="moonshot-v1-8k" if use_kimi else "gpt-3.5-turbo",
+            model=("moonshot-v1-8k" if not use_gpt4o_instead else "gpt-4o") if use_kimi else "gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             n=N,
             temperature=T
@@ -209,7 +213,7 @@ def generate_song(input_lyric, syllables, use_kimi, use_reward, N, N2):
 
 #=========Things need to specify before run============
 
-use_kimi = False # 记得开成False！！
+use_kimi = True # 记得开成False！！
 ckpt = 3 # 默认开成3，除非用原模型！！
 use_reward = True
 use_N2 = True # 80+80
@@ -217,9 +221,9 @@ N = 40 # !
 N2 = 40
 if not use_N2: N2 = 0
 
-tmp = 'kimi' if use_kimi else 'llama'
+tmp = ('kimi' if not use_gpt4o_instead else 'gpt') if use_kimi else 'llama'
 noreward_suffix = '_noreward' if not use_reward else ''
-T_suffix = '_notopp'
+T_suffix = ''
 filename = f'final_experiments/{tmp}_songs_res_N{N}+{N2}_ckpt{ckpt}{noreward_suffix}{T_suffix}.json'
 print(f'N={N}', f'N2={N2}', f'use_kimi={use_kimi}', f'use_reward={use_reward}', f'use_N2={use_N2}', f'filename={filename}')
 if ckpt < 3: print(f'[WARN!!] ckpt {ckpt}')
@@ -229,9 +233,12 @@ parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
 sys.path.append(parent_dir)
 
 if use_kimi:
-  client = OpenAI(
-    api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
-    base_url="https://api.moonshot.cn/v1")
+  if use_gpt4o_instead:
+    client = OpenAI()
+  else:
+    client = OpenAI(
+      api_key="Y2w0dXFxMXI2a2plaXVudDFhdDA6bXNrLWF0RGxuUWllNjhmME9lZTJJcWtwYnRkbDE1bEo=",
+      base_url="https://api.moonshot.cn/v1")
 else:
   from llm_score import llamaGenAPI
   llama = llamaGenAPI(ckpt=ckpt) # nofinetune=True for N=20
